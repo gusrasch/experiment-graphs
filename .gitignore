@@ -1,8 +1,8 @@
 /bots/__pycache__
 /bots/tests/__pycache__
 /bots/.pytest_cache
-/bots/poetry.lock
-/bots/infra/.terraform*
+
+/infra/.terraform*
 
 /ingest/.env
 /ingest/data
