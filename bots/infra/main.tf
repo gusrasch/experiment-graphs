@@ -1,26 +1,3 @@
-# Define input variables
-variable "project_id" {
-  description = "The ID of the Google Cloud project"
-  type        = string
-}
-
-variable "bucket_name" {
-  description = "The name of the Google Cloud Storage bucket"
-  type        = string
-}
-
-variable "region" {
-  description = "The region to deploy resources to"
-  type        = string
-  default     = "us-central1"
-}
-
-# Configure the Google Cloud provider
-provider "google" {
-  project = var.project_id
-  region  = var.region
-}
-
 # Create a GCS bucket
 resource "google_storage_bucket" "data_bucket" {
   name     = var.bucket_name
@@ -44,7 +21,7 @@ resource "google_service_account" "function_account" {
 
 # Grant the service account access to the secret
 resource "google_secret_manager_secret_iam_member" "secret_access" {
-  secret_id = google_secret_manager_secret.api_token.id
+  secret_id = google_secret_manager_secret.groupme_gus_api_token.id
   role      = "roles/secretmanager.secretAccessor"
   member    = "serviceAccount:${google_service_account.function_account.email}"
 }
@@ -62,7 +39,7 @@ resource "google_cloudfunctions_function" "callback_function" {
   entry_point           = "handle_callback"
 
   environment_variables = {
-    SECRET_NAME = google_secret_manager_secret.api_token.name
+    SECRET_NAME = google_secret_manager_secret.groupme_gus_api_token.name
   }
 
   service_account_email = google_service_account.function_account.email
