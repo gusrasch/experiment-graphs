@@ -3,3 +3,4 @@
 /bots/.pytest_cache
 /bots/poetry.lock
 /ingest/.env
+ingest/data

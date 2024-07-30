@@ -29,10 +29,11 @@ def extract_chat_history(group_id, page_size=20, max_pages=None):
     def write_to_file():
         if all_messages:
             oldest_timestamp = all_messages[-1]["created_at"]
-            filename = f"{group_id}_{last_message_id}_{oldest_timestamp}.json"
-            with open(filename, "w") as f:
+            filename = f"{group_id}_{oldest_timestamp}_{last_message_id}.json"
+            filepath = os.path.join("data", filename)
+            with open(filepath, "w") as f:
                 json.dump({"messages": all_messages}, f, indent=2)
-            click.echo(f"Saved {len(all_messages)} messages to {filename}")
+            click.echo(f"\nSaved {len(all_messages)} messages to {filename}")
             all_messages.clear()
     
     try:
@@ -45,12 +46,9 @@ def extract_chat_history(group_id, page_size=20, max_pages=None):
                 response = requests.get(url, headers=headers, params=params)
                 response.raise_for_status()
                 
-                if response.status_code == 304:
-                    click.echo("No more messages available.")
-                    break
-                
-                data = response.json()
-                messages = data.get("messages", [])
+                response_data = response.json()["response"]
+
+                messages = response_data.get("messages", [])
                 
                 if not messages:
                     click.echo("No messages in the response.")
