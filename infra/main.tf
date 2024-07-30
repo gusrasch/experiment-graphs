@@ -1,7 +1,7 @@
 # Create a GCS bucket
 resource "google_storage_bucket" "data_bucket" {
   name     = var.bucket_name
-  location = "US"
+  location = var.region
 }
 
 # Create a secret to store the API token
@@ -43,9 +43,4 @@ resource "google_cloudfunctions_function" "callback_function" {
   }
 
   service_account_email = google_service_account.function_account.email
-}
-
-# Output the function URL
-output "function_url" {
-  value = google_cloudfunctions_function.callback_function.https_trigger_url
 }
