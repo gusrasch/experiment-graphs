@@ -1,3 +1,4 @@
-/bots/__pycache__/*
-/bots/.pytest_cache/*
+/bots/__pycache__
+/bots/tests/__pycache__
+/bots/.pytest_cache
 /bots/poetry.lock
