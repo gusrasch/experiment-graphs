@@ -7,3 +7,4 @@
 
 /ingest/.env
 /ingest/data
+/ingest/.ipynb_checkpoints

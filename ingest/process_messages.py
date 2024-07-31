@@ -1,8 +1,80 @@
+import duckdb
 import requests
 import json
 import os
 import click
 from time import sleep
+
+members_query = "COPY (SELECT members.*, group_id FROM (SELECT UNNEST(members) AS members, group_id FROM './ingest/data/source/raw_groups.json')) TO './ingest/data/formatted/members.json';"
+
+messages_query = """COPY (
+        SELECT * FROM read_json('./ingest/data/source/*.json', 
+            format = 'array',
+            columns = {
+                avatar_url: 'VARCHAR',
+                created_at: 'BIGINT',
+                favorited_by: 'VARCHAR[]',
+                group_id: 'VARCHAR',
+                id: 'VARCHAR',
+                name: 'VARCHAR',
+                sender_id: 'VARCHAR',
+                sender_type: 'VARCHAR',
+                source_guid: 'VARCHAR',
+                system: 'BOOLEAN',
+                text: 'VARCHAR',
+                user_id: 'VARCHAR',
+                platform: 'VARCHAR',
+                pinned_by: 'VARCHAR',
+                deleted_at: 'BIGINT',
+                deletion_actor: 'VARCHAR'
+            }
+        )
+    ) TO './ingest/data/formatted/messages.json';
+"""
+
+attachments_query = """
+        COPY (SELECT * FROM read_json('./ingest/data/source/*.json', 
+            format = 'array',
+            columns = {
+                id: 'VARCHAR',
+                attachments: 'JSON',
+            }
+        )
+    ) TO './ingest/data/formatted/attachments.json';
+"""
+
+pinned_at_query = """
+        COPY (SELECT * FROM read_json('./ingest/data/source/*.json', 
+            format = 'array',
+            columns = {
+                id: 'VARCHAR',
+                pinned_at: 'JSON',
+            }
+        )
+    ) TO './ingest/data/formatted/pinned_at.json';
+"""
+
+reactions_query = """
+        COPY (SELECT * FROM read_json('./ingest/data/source/*.json', 
+            format = 'array',
+            columns = {
+                id: 'VARCHAR',
+                reactions: 'JSON',
+            }
+        )
+    ) TO './ingest/data/formatted/reactions.json';
+"""
+
+event_query = """
+        COPY (SELECT * FROM read_json('./ingest/data/source/*.json', 
+            format = 'array',
+            columns = {
+                id: 'VARCHAR',
+                event: 'JSON',
+            }
+        )
+    ) TO './ingest/data/formatted/event.json';
+"""
 
 def extract_chat_history(group_id, page_size=20, max_pages=None):
     """
@@ -32,7 +104,7 @@ def extract_chat_history(group_id, page_size=20, max_pages=None):
             filename = f"{group_id}_{oldest_timestamp}_{last_message_id}.json"
             filepath = os.path.join("data", filename)
             with open(filepath, "w") as f:
-                json.dump({"messages": all_messages}, f, indent=2)
+                json.dump(all_messages, f, indent=2)
             click.echo(f"\nSaved {len(all_messages)} messages to {filename}")
             all_messages.clear()
     
@@ -77,13 +149,19 @@ def extract_chat_history(group_id, page_size=20, max_pages=None):
     click.echo(f"Successfully fetched {pages_fetched} pages.")
     return pages_fetched
 
+def transform_chat_json():
+    duckdb.sql(messages_query)
+
 @click.command()
-@click.argument('group_id')
+@click.argument('stage')
+@click.option('--group_id', help='group ID, retrieve from groupme API')
 @click.option('--page-size', default=20, help='Number of messages per page (default 20, max 100)')
 @click.option('--max-pages', default=None, type=int, help='Maximum number of pages to fetch (default: fetch all)')
-def main(group_id, page_size, max_pages):
-    """Extract chat history from API"""
-    extract_chat_history(group_id, page_size, max_pages)
+def main(stage, group_id, page_size, max_pages):
+    if(stage == 'extract'):
+        extract_chat_history(group_id, page_size, max_pages)
+    elif(stage == 'transform'):
+        transform_chat_json()
 
 if __name__ == "__main__":
     main()

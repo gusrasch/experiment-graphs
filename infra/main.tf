@@ -44,3 +44,38 @@ resource "google_cloudfunctions_function" "callback_function" {
 
   service_account_email = google_service_account.function_account.email
 }
+
+# Define the BigQuery dataset
+resource "google_bigquery_dataset" "raw_dataset" {
+  dataset_id  = "raw"
+  description = "holds unprocessed data"
+  location    = var.region
+}
+
+# Define the BigQuery table
+resource "google_bigquery_table" "raw_messages_table" {
+  dataset_id = google_bigquery_dataset.raw_dataset.dataset_id
+  table_id   = "messages"
+
+  external_data_configuration {
+    autodetect    = true
+    source_format = "NEWLINE_DELIMITED_JSON"
+    source_uris   = ["gs://${var.bucket_name}/formatted/messages.json"]
+  }
+
+  deletion_protection = false
+}
+
+# Define the BigQuery table
+resource "google_bigquery_table" "raw_messages_table_pq" {
+  dataset_id = google_bigquery_dataset.raw_dataset.dataset_id
+  table_id   = "members"
+
+  external_data_configuration {
+    autodetect    = true
+    source_format = "NEWLINE_DELIMITED_JSON"
+    source_uris   = ["gs://${var.bucket_name}/formatted/members.json"]
+  }
+
+  deletion_protection = false
+}
